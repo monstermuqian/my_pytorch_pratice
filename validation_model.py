@@ -13,10 +13,9 @@ import os
 
 # 定义我的图片裁剪器
 my_transform = transforms.Compose([
-    transforms.Resize(224),
-    transforms.CenterCrop(224),
+    transforms.Resize((128, 128)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[.5, .5, .5], std=[.5, .5, .5]) # 再去搞懂这个normalize是怎么回事
+    #transforms.Normalize(mean=[.5, .5, .5], std=[.5, .5, .5]) # 再去搞懂这个normalize是怎么回事
 ])
 
 # 定义我的设备
@@ -49,40 +48,41 @@ class DogCat(Dataset):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 36, 5)
-        self.conv2 = nn.Conv2d(36, 26, 5)
-        self.conv3 = nn.Conv2d(26, 16, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(16 * 49 * 49, 160)
-        self.fc2 = nn.Linear(160, 80)
-        self.fc3 = nn.Linear(80, 20)
-        self.fc4 = nn.Linear(20, 2)
+        self.conv1 = nn.Conv2d(3, 12, 5)
+        self.conv2 = nn.Conv2d(12, 6, 5)
+        self.pool = nn.MaxPool2d(5, 5)
+        self.fc1 = nn.Linear(11094, 80)
+        self.fc2 = nn.Linear(80, 20)
+        self.fc3 = nn.Linear(20, 2)
     def forward(self, x):
         x = f.relu(self.conv1(x))
-        x = self.pool(x)
         x = f.relu(self.conv2(x))
         x = self.pool(x)
-        x = f.relu(self.conv3(x))
-        x = x.view(-1, 16 * 49 * 49)
-        x = torch.sigmoid(self.fc1(x))
-        x = torch.sigmoid(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
-        x = self.fc4(x)
+        x = x.view(-1, 11094)
+        x = f.relu(self.fc1(x))
+        x = f.relu(self.fc2(x))
+        x = self.fc3(x)
         return x
 
 
 # 定义我们的DataLoader for testing
 dataset_valid = DogCat('./valid_new', transform=my_transform)
 size_valid = dataset_valid.__len__()
-validloader = DataLoader(dataset_valid, batch_size=4, shuffle=True)
+validloader = DataLoader(dataset_valid, batch_size=2, shuffle=True)
 
 
 # 加载模型
-net_valid = Net()
+net_valid = torchvision.models.densenet121(pretrained=True)
+num_ftrs = net_valid.classifier.in_features
+net_valid.classifier = nn.Sequential(
+    nn.Linear(num_ftrs, 500),
+    nn.ReLU(),
+    nn.Linear(500, 2)
+)
 net_valid = net_valid.to(my_gpu)
 
 if __name__ == "__main__":
-    PATH_model = './my_model_net.pth'
+    PATH_model = './my_model_desnet121.pth'
     net_valid.load_state_dict(torch.load(PATH_model))
 
     # 定义迭代器
@@ -100,7 +100,8 @@ if __name__ == "__main__":
     # 输出的东西是一个4×2（4行，2列） 的结果张量，符合4个batch有4个输出的表现，其中每一行都包括
     # 对两个类的预测结果，选出较高的那个作为最终预测结果
 
-    total_correct = 0
+
+    '''
     while True:
         try:
             img, label = next(data_valid_iter)[0].to(my_gpu), next(data_valid_iter)[1].to(my_gpu)
@@ -111,6 +112,22 @@ if __name__ == "__main__":
         __, predicted = torch.max(outputs, 1)
         result = (predicted == label).sum().item()
         total_correct += result
+    '''
+    total_correct = 0
+    num_count = 0
+    for i, data in enumerate(validloader, 0):
+        img, labels = data[0].to(my_gpu), data[1].to(my_gpu)
+        outputs = net_valid(img)
+        __, predicted = torch.max(outputs, 1)
+        #print(outputs)
+        #print(predicted)
+        #print(labels)
+        result = (predicted == labels).sum().item()
+        num_count += outputs.size()[0]
+        total_correct += result
+        if i % 200 == 199:
+            print('操你妈的当前准确率是： %.5f%%' %
+                  (100 * total_correct / num_count))
 
     print('The correct rate on the validation set is: %.3f%%' %
           (100 * total_correct / size_valid))
