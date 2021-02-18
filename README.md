@@ -7,3 +7,6 @@ The code of 'seperation_data.py' is used for seperating the training data into t
 
 I still try to improve the correct rate of trained conventional neural network. But it seems always underfitted. 
 13.11.2020
+
+all works are done. The correct rate of training set is 99% and of validation set is 98%. 
+18.02.2021
