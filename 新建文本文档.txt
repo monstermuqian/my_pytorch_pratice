@@ -1,0 +1,24 @@
+15.02.2021
+
+training 84.7386%
+validation 83.752%
+
+
+training 85.26033% 
+validation 84.112%
+
+
+training 84.99959%   0.0000001
+validation 84.168%
+
+
+trainig 85.10552%  0.0000003
+validation 84.216%
+	 84.744%
+
+很有可能跑进一个local minimum了。。。
+
+
+
+
+
