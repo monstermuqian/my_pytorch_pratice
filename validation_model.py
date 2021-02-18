@@ -105,7 +105,7 @@ if __name__ == "__main__":
             num_count += outputs.size()[0]
             total_correct += result
             if i % 200 == 199:
-                print('操你妈的当前准确率是： %.5f%%' %
+                print('当前准确率是： %.5f%%' %
                       (100 * total_correct / num_count))
                 print('当前的loss为： %.5f ' % (total_loss / 200))
                 total_loss = 0.0
